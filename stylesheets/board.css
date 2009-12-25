@@ -1,0 +1,62 @@
+ol {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.pieces {
+	border: solid black 4px;
+	width: 100px;
+}
+
+#black-pieces {
+	position: absolute;
+	top: 8px;
+	left: 790px;
+}
+
+#board-container {
+	border: solid black 5px;
+	width: 635px;
+	height: 500px;
+	position: absolute;
+	top: 5px;
+	left: 130px;
+}
+
+.row {
+	/* This has to be .hex width * # of cols */
+	width: 560px;
+}
+
+.hex {
+	/* The width and height depend on the size of the hex image. */
+	width: 80px;
+	height: 65px;
+	border: none;
+	float: left;
+	/* for IE */
+	filter:alpha(opacity=40);
+	/* CSS3 standard */
+	opacity:0.4;
+}
+
+.hidden {
+	/* for IE */
+	filter:alpha(opacity=0);
+	/* CSS3 standard */
+	opacity:0.0;
+}	
+
+.offset {
+	position: relative;
+	/* half of the hex width. */
+	left: 40px;
+}
+
+.available-move {
+	/* for IE */
+	filter:alpha(opacity=90);
+	/* CSS3 standard */
+	opacity:0.9;
+}

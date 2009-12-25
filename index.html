@@ -1,0 +1,41 @@
+{% load mod %}
+
+<html>
+	<head>
+		<link type="text/css" rel="stylesheet" href="/stylesheets/board.css">
+		<script src="js/closure-library-read-only/closure/goog/base.js"></script>
+		<script>
+			goog.require('goog.fx.DragDrop');
+			goog.require('goog.fx.DragDropGroup');
+			goog.require('goog.dom');
+			goog.require('goog.array');
+			goog.require('goog.net.XhrIo'); 
+			goog.require("goog.structs.Map");
+			goog.require("goog.Uri.QueryData");
+		</script>
+	</head>
+	<body>
+	<ol id="white-pieces" class="pieces">
+		{% for insect in pieces %}
+			<li id="{{ insect.name }}-white"><img src="/img/{{ insect.name }}_white.png"></li>
+		{% endfor %}
+	</ol>
+	<div id="board-container">
+		{% for row in board.rows %}
+			<div>
+			{% for col in row %}
+				<span id="{{ col.id }}" class="hex {% if forloop.parentloop.counter0|mod:2 %}offset{% endif %} {% ifequal col board.start %}start{% endifequal %} {% if not col.is_visible %}hidden{% endif %}">
+						<img src="/img/hexagon.png" />
+				</span>
+			{% endfor %}
+			</div>
+		{% endfor %}
+	</div>
+	<ol id="black-pieces" class="pieces">
+		{% for insect in pieces %}
+			<li id="{{ insect.name }}-black"><img src="/img/{{ insect.name }}_black.png"></li>
+		{% endfor %}
+	</ol>
+	</body>
+	<script src="js/insects.js"></script>
+</html>
