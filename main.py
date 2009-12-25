@@ -78,8 +78,7 @@ class Game(webapp.RequestHandler):
 		self.response.out.write(template.render(path, template_values))
 		
 application = webapp.WSGIApplication([
-									('/', MainPage),
-									('/index.html', Game),
+									('/', Game),
 									('/show_moves', ShowMoves),
 									('/move', Move),
 									],

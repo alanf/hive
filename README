@@ -1,0 +1,6 @@
+# Maintained by alan fineberg (af@cs.washington.edu)
+
+# Installation:
+# 
+# create a symlink to closure-library-read-only/ (google closure library) in js/
+# run on google app engine
