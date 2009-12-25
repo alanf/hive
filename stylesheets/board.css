@@ -12,27 +12,25 @@ ol {
 #black-pieces {
 	position: absolute;
 	top: 8px;
-	left: 790px;
+	left: 660px;
 }
 
 #board-container {
 	border: solid black 5px;
-	width: 635px;
-	height: 500px;
+	width: 510px;
+	height: 620px;
 	position: absolute;
 	top: 5px;
 	left: 130px;
 }
 
 .row {
-	/* This has to be .hex width * # of cols */
-	width: 560px;
 }
 
 .hex {
-	/* The width and height depend on the size of the hex image. */
-	width: 80px;
-	height: 65px;
+	/* The width and height depend on the size of the hex image and the desired spacing. */
+	width: 67px;
+	height: 80px;
 	border: none;
 	float: left;
 	/* for IE */
@@ -43,15 +41,14 @@ ol {
 
 .hidden {
 	/* for IE */
-	filter:alpha(opacity=0);
+	filter:alpha(opacity=50);
 	/* CSS3 standard */
-	opacity:0.0;
+	opacity:0.50;
 }	
 
 .offset {
 	position: relative;
-	/* half of the hex width. */
-	left: 40px;
+	top: 40px; 
 }
 
 .available-move {

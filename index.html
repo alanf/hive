@@ -23,9 +23,9 @@
 	</ol>
 	<div id="board-container">
 		{% for row in game_state.board.rows %}
-			<div>
+			<div class="row">
 			{% for col in row %}
-				<span id="{{ col.id }}" class="hex {% if forloop.parentloop.counter0|mod:2 %}offset{% endif %}{% if not col.is_visible %} hidden{% endif %}">
+				<span id="{{ col.id }}" class="hex {% if forloop.counter0|mod:2 %}offset{% endif %}{% if not col.is_visible %} hidden{% endif %}">
 						<img src="/img/hexagon.png" />
 				</span>
 			{% endfor %}
