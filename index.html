@@ -15,16 +15,17 @@
 		</script>
 	</head>
 	<body>
+	{{ game_state }}
 	<ol id="white-pieces" class="pieces">
-		{% for insect in pieces %}
+		{% for insect in game_state.white_pieces %}
 			<li id="{{ insect.name }}-white"><img src="/img/{{ insect.name }}_white.png"></li>
 		{% endfor %}
 	</ol>
 	<div id="board-container">
-		{% for row in board.rows %}
+		{% for row in game_state.board.rows %}
 			<div>
 			{% for col in row %}
-				<span id="{{ col.id }}" class="hex {% if forloop.parentloop.counter0|mod:2 %}offset{% endif %} {% ifequal col board.start %}start{% endifequal %} {% if not col.is_visible %}hidden{% endif %}">
+				<span id="{{ col.id }}" class="hex {% if forloop.parentloop.counter0|mod:2 %}offset{% endif %}{% if not col.is_visible %} hidden{% endif %}">
 						<img src="/img/hexagon.png" />
 				</span>
 			{% endfor %}
@@ -32,7 +33,7 @@
 		{% endfor %}
 	</div>
 	<ol id="black-pieces" class="pieces">
-		{% for insect in pieces %}
+		{% for insect in game_state.black_pieces %}
 			<li id="{{ insect.name }}-black"><img src="/img/{{ insect.name }}_black.png"></li>
 		{% endfor %}
 	</ol>
