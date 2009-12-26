@@ -16,7 +16,7 @@ from google.appengine.ext.webapp import util
 class Create(webapp.RequestHandler):
 	def get(self):
 		""" Form to create a game. """
-		path = os.path.join(os.path.dirname(__file__), 'create.html')
+		path = os.path.join(os.path.dirname(__file__), 'templates', 'create.html')
 		self.response.out.write(template.render(path, {}))
 	
 	def post(self):
@@ -48,7 +48,7 @@ class Table(webapp.RequestHandler):
 				is_creator = True
 			else:
 				is_creator = False
-			path = os.path.join(os.path.dirname(__file__), 'table.html')
+			path = os.path.join(os.path.dirname(__file__), 'templates', 'table.html')
 			self.response.out.write(template.render(path, {
 				'table_key': table_key,
 				'is_creator': is_creator,
@@ -114,7 +114,7 @@ class Game(webapp.RequestHandler):
 		template_values = {
 			'game_state': game_state
 		}
-		path = os.path.join(os.path.dirname(__file__), 'game.html')
+		path = os.path.join(os.path.dirname(__file__), 'templates', 'game.html')
 		self.response.out.write(template.render(path, template_values))
 		
 class ShowMoves(webapp.RequestHandler):
