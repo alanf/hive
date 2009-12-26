@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-import copy
 
 # Base class for all the insects. 
 class Insect(object):
-	def __init__(self):
+	def __init__(self, color):
 		# None for not in play
-		self.hex = None
+		self.hex_id = None
+		self.color = color
 
 class Spider(Insect):
 	name = 'spider'
 
 class Beetle(Insect):
 	name = 'beetle'
-	def __init__(self):
-		super(Beetle, self).__init__()
+	def __init__(self, color):
+		super(Beetle, self).__init__(color)
 		# the beetle can climb on other insects
 		self.height = 0
 
@@ -27,19 +27,19 @@ class Ant(Insect):
 	name = 'ant'
 
 class Hex(object):
-	""" Represents a single tile which may or may not have an insect. """
-	def __init__(self, coord, is_playable=False, current_insect=None, is_visible=False):
+	""" Represents a single tile which may contain multiple insects. """
+	def __init__(self, coord, is_visible=False):
 		self.coord = coord
 		self.id = '%s-%s' % self.coord
-		self.current_insect = current_insect
-		# TODO: better name, this var is for peripheral hexes
+		self.insects = []
+		# TODO: better name, this var is for displaying peripheral hexes
 		self.is_visible = is_visible
 
 class HiveBoard(object):
 	""" A grid of hex tiles. Since insects can be placed forever in any direction,
 		this will have to grow in a strange way, this is a TODO. """
 	def __init__(self, size=7):
-		# Row coordinates are backwards: y axis, x axis
+		# Row coordinates are backwards: y axis, x axis. Best to use an accessor
 		self.rows = []
 		for i in range(size):
 			row = []
@@ -48,49 +48,98 @@ class HiveBoard(object):
 			self.rows.append(row)
 
 		# TODO math.ceil
-		self.rows[3][3] = Hex((3, 3), is_playable=True, is_visible=True)
+		self.rows[3][3] = Hex((3, 3), is_visible=True)
 		self.start = self.rows[3][3]
 	
-	def get_by_id(self, target_id):
-		coord = map(int, target_id.split('-'))
+	def _id_to_coord(self, id):
+		return map(int, id.split('-'))
+
+	def get_all(self):
+		result = []
+		for row in self.rows:
+			result.extend(row)
+		return result
+
+	def get_by_coord(self, coord):
 		return self.rows[coord[1]][coord[0]]
+
+	def get_by_id(self, hex_id):
+		coord = self._id_to_coord(hex_id)
+		return self.get_by_coord(coord)
+	
+	def get_insects_by_id(self, hex_id):
+		return self.get_by_id(hex_id).insects
+
+	def neighbors(self, hex_id):
+		coord = self._id_to_coord(hex_id)
+		offsets =  [(-1, -1), (0, -1), (1, -1),
+					(-1, 0), (0, 1), (1, 0)]
+		# Build a list of all the hexes offset from the target
+		return [self.get_by_coord((coord[0] + x, coord[1] + y)) for x, y in offsets]
+		
 
 class GameState(object):
 	""" Everything we need to store and successfully resume a game. """
 	def __init__(self, white_player, black_player):
 		self.white_player = white_player
 		self.black_player = black_player
-		self.current_turn = 'white'
-		self.white_pieces = Spider(), Beetle(), Grasshopper(), Bee(), Ant(),
-		self.black_pieces = copy.copy(self.white_pieces)
+		self.current_turn = 0
+
+		# FIXME: sigh...so verbose and redundant
+		self.white_pieces = Spider("white"), Spider("white"), Beetle("white"), Beetle("white"), Grasshopper("white"), Grasshopper("white"),Grasshopper("white"), Bee("white"), Ant("white"), Ant("white"), Ant("white")
+		self.black_pieces = Spider("black"), Spider("black"), Beetle("black"), Beetle("black"), Grasshopper("black"), Grasshopper("black"),Grasshopper("black"), Bee("black"), Ant("black"), Ant("black"), Ant("black")
 		self.board = HiveBoard()
+
 		# Set the first time the game state is written to the store
 		self.key = None
 	
-	def move(self, color, insect, target_id):
+	def lookup_insect(self, color, name, current_hex_id):
+		""" Given an insect's color, name, and current hex id return a reference to that insect. """
+		if color == 'white':
+			insects = self.white_pieces
+		elif color == 'black':
+			insects = self.black_pieces
+		else:
+			# TODO: exception
+			pass
+
+		for insect in insects:
+			if insect.name == name and insect.hex_id == current_hex_id:
+				return insect
+		else:
+			return None
+
+	def move(self, color, insect_name, current_hex_id, target_hex_id):
 		""" Move a piece somewhere, throw an exception if it's not allowed. """
-		if False:
-			insect.hex = self.board.get_by_id(target)
-			if self.current_turn == 'white':
-				self.current_turn = 'black'
-			else:
-				self.current_turn = 'white'
+		# TODO: refactor this method, it's too long
+		insect = self.lookup_insect(color, insect_name, current_hex_id)
+		target_hex = self.board.get_by_id(target_hex_id)
+
+		# Move insect on the game board
+		if current_hex_id:
+			self.board.get_insects_by_id(current_hex_id).remove(insect)
+		# Tell the insect where it is
+		insect.hex_id = target_hex.id
+		# Tell the hex what's on it
+		target_hex.insects.append(insect)
+
+		self.current_turn += 1
 
 		# TODO: need actual logic here, this is placeholder
-		newly_visible = map(self.board.get_by_id, ['2-3', '3-4', '4-3', '3-2', '2-2', '4-2'])
+		newly_visible = self.board.neighbors(target_hex_id)
+
 		for a_hex in newly_visible:
 			a_hex.is_visible = True
 		no_longer_visible = []
 		return newly_visible, no_longer_visible
 		
-	def show_moves(self, color, insect):
+	def show_moves(self, color, insect, current_hex):
 		""" Returns a list of hex ids that the insect can move to """
-		# TODO: this is placeholder
-		return [self.board.start]
+		return [a_hex for a_hex in self.board.get_all() if a_hex.is_visible]
 
-	def check_move(self, color, insect, target_id):
+	def check_move(self, color, insect, current_hex_id, target_hex_id):
 		""" Returns True if the insect can move to the target. """
-		pass
+		return True
 
 	def winner(self):
 		""" Returns None if the game is not over or the color of the winning player. """

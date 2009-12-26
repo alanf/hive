@@ -73,9 +73,8 @@ class Table(webapp.RequestHandler):
 			game = dbobjs.Game()
 			game.creator = table.creator
 			game.opponent = user
-			# TODO: use their nicknames or ids or something
 			game_state = GameState(game.creator, game.opponent)
-			table.game = game_key = store_game(game, game_state)
+			table.game = game_key = store_game(game_state)
 			table.put()
 		else:
 			game_key = table.game
@@ -89,14 +88,18 @@ def load_game_by_key(key):
 	except:
 		return None
 
-def store_game(game, game_state):
-	game = dbobjs.Game()
-	game.game_state = pickle.dumps(game_state)
+def store_game(game_state):
 	if game_state.key is None:
-		# TODO: write twice, so we can store the key. There's a better way...
+		game = dbobjs.Game()
+		game.game_state = pickle.dumps(game_state)
 		game.put()
 		key = game.key()
 		game_state.key = key
+	else:
+		# TODO: Careful here...validation could be useful
+		game = db.get(game_state.key)
+
+	# Store the game state with the key included
 	game.game_state = pickle.dumps(game_state)
 	game.put()
 	return game.key()
@@ -122,9 +125,10 @@ class ShowMoves(webapp.RequestHandler):
 
 		insect_name = self.request.get('insect_name')
 		insect_color = self.request.get('insect_color')
+		current_hex = self.request.get('current_hex')
 		response = {
 			'success': True,
-			'hexes': [a_hex.id for a_hex in game_state.show_moves(insect_color, insect_name)]
+			'hexes': [a_hex.id for a_hex in game_state.show_moves(insect_color, insect_name, current_hex)]
 		}
 		self.response.out.write(simplejson.dumps(response))
 		
@@ -134,25 +138,27 @@ class Move(webapp.RequestHandler):
 		""" Submit a move and return what changed on the board, or an error. """
 		# TODO: check for end of game conditions
 		game_key = self.request.get('gid')
-		assert game_key
 		game_state = load_game_by_key(game_key)
 
 		insect_name = self.request.get('insect_name')
 		insect_color = self.request.get('insect_color')
+		current_hex = self.request.get('current_hex', None)
 		target_hex = self.request.get('target_hex')
 
-		try:
-			result = game_state.move(insect_color, insect_name, target_hex)
-			response = {
-				'success': True,
-				'reveal_hex_ids': [a_hex.id for a_hex in result[0]],
-				'hide_hex_ids': [a_hex.id for a_hex in result[1]],
-			}
-		except:
-			response = {
-				'success': False,
-				'msg': 'Something went wrong, :-/'
-			}
+		# TODO: let the exceptions reach top level for now
+#		try:
+		result = game_state.move(insect_color, insect_name, current_hex, target_hex)
+		response = {
+			'success': True,
+			'reveal_hex_ids': [a_hex.id for a_hex in result[0]],
+			'hide_hex_ids': [a_hex.id for a_hex in result[1]],
+		}
+		store_game(game_state)
+#		except:
+#			response = {
+#				'success': False,
+#				'msg': 'Something went wrong, :-/'
+#			}
 
 		self.response.out.write(simplejson.dumps(response))
 		

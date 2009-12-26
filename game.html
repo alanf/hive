@@ -19,15 +19,20 @@
 	{{ game_state }}
 	<ol id="white-pieces" class="pieces">
 		{% for insect in game_state.white_pieces %}
-			<li id="{{ insect.name }}-white"><img src="/img/{{ insect.name }}_white.png"></li>
+			<li id="{{ insect.name }}-{{ insect.color }}"><img src="/img/{{ insect.name }}_{{ insect.color }}.png"></li>
 		{% endfor %}
 	</ol>
 	<div id="board-container">
 		{% for row in game_state.board.rows %}
 			<div class="row">
 			{% for col in row %}
-				<span id="{{ col.id }}" class="hex {% if forloop.counter0|mod:2 %}offset{% endif %}{% if not col.is_visible %} hidden{% endif %}">
+			{# FIXME: this is really gross with all the nested ifs. What to do? #}
+				<span id="{{ col.id }}" class="hex {% if forloop.counter0|mod:2 %}offset{% endif %}{% if col.insects %} insect{% endif %}{% if not col.is_visible %} hidden{% endif %}">
+					{% if col.insects %}
+						<img src="/img/{{ col.insects.0.name }}_{{ col.insects.0.color }}.png" />
+					{% else %}
 						<img src="/img/hexagon.png" />
+					{% endif %}
 				</span>
 			{% endfor %}
 			</div>
@@ -35,7 +40,7 @@
 	</div>
 	<ol id="black-pieces" class="pieces">
 		{% for insect in game_state.black_pieces %}
-			<li id="{{ insect.name }}-black"><img src="/img/{{ insect.name }}_black.png"></li>
+			<li id="{{ insect.name }}-{{ insect.color }}"><img src="/img/{{ insect.name }}_{{ insect.color }}.png"></li>
 		{% endfor %}
 	</ol>
 	</body>

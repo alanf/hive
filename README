@@ -3,4 +3,5 @@
 # Installation:
 # 
 # create a symlink to closure-library-read-only/ (google closure library) in js/
+# install the mod filter for django (http://thebuckpasser.com/index.cfm/2007/10/22/Modulo-In-Django-Templates)
 # run on google app engine

@@ -7,6 +7,7 @@ ol {
 .pieces {
 	border: solid black 4px;
 	width: 100px;
+	opacity:0.9;
 }
 
 #black-pieces {
@@ -24,9 +25,6 @@ ol {
 	left: 130px;
 }
 
-.row {
-}
-
 .hex {
 	/* The width and height depend on the size of the hex image and the desired spacing. */
 	width: 67px;
@@ -37,6 +35,21 @@ ol {
 	filter:alpha(opacity=40);
 	/* CSS3 standard */
 	opacity:0.4;
+}
+
+.insect {
+	/* for IE */
+	filter:alpha(opacity=100);
+	/* CSS3 standard */
+	opacity:1.0;
+}
+
+.mouse-over {
+	opacity: 0.8;
+}
+
+.mouse-over img {
+	border: solid black 2px;
 }
 
 .hidden {
