@@ -1,0 +1,12 @@
+<html>
+	<body>
+	{% if is_creator %}
+		<p>Waiting for opponent...(send them this url)</p>
+	{% else %}
+		<form action="/table" method="POST">
+			<input type="hidden" name="tid" value="{{ table_key }}" />
+			<input type="Submit" value="Join this game" />
+		</form>
+	{% endif %}
+	</body>
+</html>

@@ -41,9 +41,9 @@ ol {
 
 .hidden {
 	/* for IE */
-	filter:alpha(opacity=50);
+	filter:alpha(opacity=0);
 	/* CSS3 standard */
-	opacity:0.50;
+	opacity:0.0;
 }	
 
 .offset {
