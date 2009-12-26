@@ -104,21 +104,21 @@ def store_game(game, game_state):
 class Game(webapp.RequestHandler):
 	""" This is the main view, it sets up all the state to render the game. """
 	def get(self):
-		game_id = self.request.get('gid')
+		game_key = self.request.get('gid')
 		# TODO: validation, throw error if necessary
-		game_state = load_game_by_key(game_id)
+		game_state = load_game_by_key(game_key)
 
 		template_values = {
 			'game_state': game_state
 		}
-		path = os.path.join(os.path.dirname(__file__), 'index.html')
+		path = os.path.join(os.path.dirname(__file__), 'game.html')
 		self.response.out.write(template.render(path, template_values))
 		
 class ShowMoves(webapp.RequestHandler):
 	""" Responds to xhr requests when an insect is selected, to display where it can move. """
 	def get(self):
-		game_id = self.request.get('gid')
-		game_state = load_game_by_key(game_id)
+		game_key = self.request.get('gid')
+		game_state = load_game_by_key(game_key)
 
 		insect_name = self.request.get('insect_name')
 		insect_color = self.request.get('insect_color')
@@ -133,8 +133,9 @@ class Move(webapp.RequestHandler):
 	def post(self):
 		""" Submit a move and return what changed on the board, or an error. """
 		# TODO: check for end of game conditions
-		game_id = self.request.get('gid')
-		game_state = load_game_by_key(game_id)
+		game_key = self.request.get('gid')
+		assert game_key
+		game_state = load_game_by_key(game_key)
 
 		insect_name = self.request.get('insect_name')
 		insect_color = self.request.get('insect_color')
@@ -157,6 +158,7 @@ class Move(webapp.RequestHandler):
 		
 
 application = webapp.WSGIApplication([
+									('^/$', Create),
 									('^/create.*$', Create),
 									('^/table.*$', Table),
 									('^/game.*$', Game),

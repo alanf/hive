@@ -9,9 +9,11 @@ var pieceSelected = function(event) {
 	var item = goog.dom.getAncestorByTagNameAndClass(event.target, 'LI'); 
 	var insectName = item.id.split('-')[0];
 	var insectColor = item.id.split('-')[1];
-	// TODO: use libs to form uri
-	var url = encodeURI('/show_moves?insect_name=' + insectName + '&insect_color=' + insectColor);
-	goog.net.XhrIo.send(url, showMovesResponse);
+	 
+	var queryData = new goog.Uri(document.URL).getQueryData();
+	queryData.add('insect_name', insectName);
+	queryData.add('insect_color', insectColor);
+	goog.net.XhrIo.send("show_moves?" + queryData.toString(), showMovesResponse);
 };
 
 var showMovesResponse = function(event) {
@@ -25,12 +27,13 @@ var showMovesResponse = function(event) {
 var hexClicked = function(event) {
 	var hex = goog.dom.getAncestorByTagNameAndClass(event.target, 'SPAN'); 
 	if (goog.dom.classes.has(hex, 'available-move')) {
-		var data = goog.Uri.QueryData.createFromMap(new goog.structs.Map({
+		var queryData = goog.Uri.QueryData.createFromMap(new goog.structs.Map({
 			insect_name: 'ant',
 			insect_color: 'white',
 			target_hex: '3-3'
 		}));
-		goog.net.XhrIo.send("move", moveResponse, "POST", data.toString());
+		queryData.extend(new goog.Uri(document.URL).getQueryData());
+		goog.net.XhrIo.send("/move", moveResponse, "POST", queryData.toString());
 	}
 }
 
