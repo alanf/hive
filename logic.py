@@ -93,32 +93,24 @@ class GameState(object):
 		# Set the first time the game state is written to the store
 		self.key = None
 	
-	def lookup_insect(self, color, name, current_hex_id):
+	def lookup_insect(self, color, name, current_hex_id=None):
 		""" Given an insect's color, name, and current hex id return a reference to that insect. """
-		if color == 'white':
-			insects = self.white_pieces
-		elif color == 'black':
-			insects = self.black_pieces
-		else:
-			# TODO: exception
-			pass
-
-		for insect in insects:
-			if insect.name == name and insect.hex_id == current_hex_id:
+		for insect in (self.white_pieces + self.black_pieces):
+			if insect.color == color and insect.name == name and insect.hex_id == current_hex_id:
 				return insect
 		else:
 			return None
 
-	def move(self, color, insect_name, current_hex_id, target_hex_id):
-		""" Move a piece somewhere, throw an exception if it's not allowed. """
-		# TODO: refactor this method, it's too long
-		insect = self.lookup_insect(color, insect_name, current_hex_id)
+	def show_placements(self, color):
+		""" Returns a list of hex ids that the player can play a new insect on """
+		return [a_hex for a_hex in self.board.get_all() if a_hex.is_visible]
+
+	def placement(self, color, insect_name, target_hex_id):
+		""" TODO: this logic is duplicated, but it's a placeholder currently. """
+		insect = self.lookup_insect(color, insect_name)
 		target_hex = self.board.get_by_id(target_hex_id)
 
-		# Move insect on the game board
-		if current_hex_id:
-			self.board.get_insects_by_id(current_hex_id).remove(insect)
-		# Tell the insect where it is
+		# Tell the insect where it now is
 		insect.hex_id = target_hex.id
 		# Tell the hex what's on it
 		target_hex.insects.append(insect)
@@ -131,24 +123,46 @@ class GameState(object):
 		for a_hex in newly_visible:
 			a_hex.is_visible = True
 		no_longer_visible = []
-		return newly_visible, no_longer_visible
-		
-	def show_placements(self, color):
-		""" Returns a list of hex ids that the player can play a new insect on """
-		return [a_hex for a_hex in self.board.get_all() if a_hex.is_visible]
+		return {
+			'newly_visible': newly_visible,
+			'no_longer_visible': no_longer_visible,
+		}
 
-	def placement(self, color, insect_name, target_hex_id):
-		""" TODO: logic of actually adding a new insect to the board. """
-		return self.move(color, insect_name, None, target_hex_id)
-
-	def show_moves(self, color, insect, current_hex):
-		""" Returns a list of hex ids that the insect can move to """
+	def show_moves(self, current_hex):
+		""" Returns a list of hex ids that the insect on the current_hex can move to """
 		return [a_hex for a_hex in self.board.get_all() if a_hex.is_visible]
 
 	def _check_move(self, color, insect, current_hex_id, target_hex_id):
 		""" Returns True if the insect can move to the target. """
 		return True
 
+	def move(self, current_hex_id, target_hex_id):
+		""" Move a piece somewhere, throw an exception if it's not allowed. """
+		target_hex = self.board.get_by_id(target_hex_id)
+		current_hex = self.board.get_by_id(current_hex_id)
+		insect = current_hex.insects[0]
+
+		# Move the insect from its old spot
+		current_hex.insects.remove(insect)
+		# Tell the insect where it now is
+		insect.hex_id = target_hex.id
+		# Tell the hex what's on it
+		target_hex.insects.append(insect)
+
+		self.current_turn += 1
+
+		# TODO: need actual logic here, this is placeholder
+		newly_visible = self.board.neighbors(target_hex_id)
+
+		for a_hex in newly_visible:
+			a_hex.is_visible = True
+		no_longer_visible = []
+		return {
+			'newly_visible': newly_visible,
+			'no_longer_visible': no_longer_visible,
+			'insect': insect
+		}
+		
 	def winner(self):
 		""" Returns None if the game is not over or the color of the winning player. """
 		pass

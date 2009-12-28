@@ -19,7 +19,6 @@ var Main = function () {
 	this.targetHexID = null;
 	this.currentHexID = null;
 	// The player highlighted this
-	this.selectedHex = null;
 };
 
 Main.prototype.newInsectSelected = function(event) {
@@ -52,19 +51,19 @@ Main.prototype.hexClicked = function (event) {
 	var hex = goog.dom.getAncestorByTagNameAndClass(event.target, 'SPAN'); 
 
 	// Show the possible moves of a selected insect already in play.
-	if (this.selectedHex == null && goog.dom.classes.has(hex, 'insect')) {
-		this.selectedHex = hex;	
+	if (this.currentHexID == null && goog.dom.classes.has(hex, 'insect')) {
+		this.currentHexID = hex.id;	
 
 		var queryData = new goog.Uri(document.URL).getQueryData();
-		queryData.add('current_hex', this.selectedHex.id);
+		queryData.add('current_hex', this.currentHexID);
 		queryData.extend(new goog.Uri(document.URL).getQueryData());
 		xhrSend("show_moves?" + queryData.toString(), this.newInsectSelectedResponse, this);
 	}
 	// Try to move an insect from the previously selected hex to the clicked hex. 
-	else if (this.selectedHex && goog.dom.classes.has(hex, 'available-move')) {
+	else if (this.currentHexID && goog.dom.classes.has(hex, 'available-move')) {
 		var queryData = goog.Uri.QueryData.createFromMap(new goog.structs.Map({
 			target_hex: hex.id,
-			current_hex: this.selectedHex.id
+			current_hex: this.currentHexID
 		}));
 		queryData.extend(new goog.Uri(document.URL).getQueryData());
 		this.targetHexID = hex.id;
@@ -86,11 +85,16 @@ Main.prototype.hexClicked = function (event) {
 Main.prototype.moveResponse = function (event) {
 	// Administrative work to update the board after moving an insect
 	// TODO: check success
-	this.selectedHex  = null;
 	var response = event.target.getResponseJson();
 	goog.array.forEach(response.reveal_hex_ids, function (hexID) {
 		goog.dom.classes.remove($(hexID), 'hidden');
 	});
+	if (response.insect_name) {
+		this.selectedInsectName = response.insect_name;
+	}
+	if (response.insect_color) {
+		this.selectedInsectColor = response.insect_color;
+	}
 	this.updateBoard(this.selectedInsectName, this.selectedInsectColor, this.currentHexID, this.targetHexID);
 };
 
@@ -100,9 +104,20 @@ Main.prototype.updateBoard = function (insectName, insectColor, currentHexID, ta
 	goog.dom.classes.remove(targetHex, 'available-move');
 	this.updateHexIcon(targetHex, insectName, insectColor);
 
-	//var currentHex = $(currentHexID);
-	//this.updateHexIcon(currentHex);
+	if (currentHexID) {
+		var currentHex = $(currentHexID);
+		this.resetHexIcon(currentHex);
+		this.currentHexID = null;
+	}
 };
+
+Main.prototype.resetHexIcon = function (hex) {
+	newImg = '/img/hexagon.png';
+	goog.array.forEach($$('img', null, hex), function (imgEl) {
+		imgEl.src = newImg;
+	});
+	goog.dom.classes.remove(hex, "insect");
+}
 
 Main.prototype.updateHexIcon = function (hex, insectName, insectColor) {
 	// TODO: a version that clears the insect's old space 
