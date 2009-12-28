@@ -9,18 +9,21 @@ var xhrSend = function (url, callback, context, method, queryDataString) {
 	xhr.send(url, method, queryDataString);
 }
 	
+// Functionality for updating the game
 var Main = function () {
-	// Encompasses the between-moves game state (we call the server on each move(
-	// and updates the display after each move.
+	// Encompasses the between-moves game state (we call the server on each user action)
+	// Updates the display after each move.
 	// TODO: we need to poll for the other player's actions
 	this.selectedInsectName = null;
 	this.selectedInsectColor = null;
 	this.targetHexID = null;
 	this.currentHexID = null;
+	// The player highlighted this
+	this.selectedHex = null;
 };
 
-Main.prototype.pieceSelected = function(event) {
-	// The user selected an insect, ask the server where they can move
+Main.prototype.newInsectSelected = function(event) {
+	// The user selected an insect not yet in play
 	//TODO: img instead of li is the target
 	var item = goog.dom.getAncestorByTagNameAndClass(event.target, 'LI'); 
 	this.selectedInsectName = item.id.split('-')[0];
@@ -29,12 +32,12 @@ Main.prototype.pieceSelected = function(event) {
 	var queryData = new goog.Uri(document.URL).getQueryData();
 	queryData.add('insect_name', this.selectedInsectName);
 	queryData.add('insect_color', this.selectedInsectColor);
-	//queryData.add('current_hex', insectColor);
-	xhrSend("show_moves?" + queryData.toString(), this.showMovesResponse, this);
+	queryData.extend(new goog.Uri(document.URL).getQueryData());
+	xhrSend("show_available_placements?" + queryData.toString(), this.newInsectSelectedResponse, this);
 };
 
-Main.prototype.showMovesResponse = function(event) {
-	// Highlight the hexes that the user can move to with the selected insect
+Main.prototype.newInsectSelectedResponse = function(event) {
+	// Highlight the hexes that the user can place a new insect on
 	var response = event.target.getResponseJson();
 	goog.array.forEach(response.hexes, function (hexID) {
 		goog.dom.classes.add($(hexID), 'available-move');
@@ -42,24 +45,48 @@ Main.prototype.showMovesResponse = function(event) {
 };
 
 Main.prototype.hexClicked = function (event) {
-	// A hex is clicked before moving an insect there
+	// This function's behavior depends on what is currently selected.
+	// * if no insect or hex is selected, then the user wants to move an insect in play and we select it and call the "show moves" action.
+	// * if a hex is already selected, the user wants to move an insect from one space to another and call the "move" action..
+	// * if an insect is already selected, the user wants to play a new piece on the board. call the "move" action.
 	var hex = goog.dom.getAncestorByTagNameAndClass(event.target, 'SPAN'); 
-	if (goog.dom.classes.has(hex, 'available-move')) {
-		var queryData = goog.Uri.QueryData.createFromMap(new goog.structs.Map({
-			insect_name: this.selectedInsectName,
-			insect_color: this.selectedInsectColor,
-	//		current_hex: null, // TODO: get the current hex id
-			target_hex: hex.id
-		}));
-		this.targetHexID = hex.id;
+
+	// Show the possible moves of a selected insect already in play.
+	if (this.selectedHex == null && goog.dom.classes.has(hex, 'insect')) {
+		this.selectedHex = hex;	
+
+		var queryData = new goog.Uri(document.URL).getQueryData();
+		queryData.add('current_hex', this.selectedHex.id);
 		queryData.extend(new goog.Uri(document.URL).getQueryData());
+		xhrSend("show_moves?" + queryData.toString(), this.newInsectSelectedResponse, this);
+	}
+	// Try to move an insect from the previously selected hex to the clicked hex. 
+	else if (this.selectedHex && goog.dom.classes.has(hex, 'available-move')) {
+		var queryData = goog.Uri.QueryData.createFromMap(new goog.structs.Map({
+			target_hex: hex.id,
+			current_hex: this.selectedHex.id
+		}));
+		queryData.extend(new goog.Uri(document.URL).getQueryData());
+		this.targetHexID = hex.id;
 		xhrSend("/move", this.moveResponse, this, "POST", queryData.toString());
 	}
+	// Put a new insect into play, and describe what it is.
+	else if (goog.dom.classes.has(hex, 'available-move')) {
+		queryData = goog.Uri.QueryData.createFromMap(new goog.structs.Map({
+			insect_name: this.selectedInsectName,
+			insect_color: this.selectedInsectColor,
+			target_hex: hex.id
+		}));
+		queryData.extend(new goog.Uri(document.URL).getQueryData());
+		this.targetHexID = hex.id;
+		xhrSend("/placement", this.moveResponse, this, "POST", queryData.toString());
+	}	
 };
 
 Main.prototype.moveResponse = function (event) {
-	// Administrative work to update the board after moving
+	// Administrative work to update the board after moving an insect
 	// TODO: check success
+	this.selectedHex  = null;
 	var response = event.target.getResponseJson();
 	goog.array.forEach(response.reveal_hex_ids, function (hexID) {
 		goog.dom.classes.remove($(hexID), 'hidden');
@@ -105,12 +132,12 @@ var main = new Main();
 
 // Listeners (must come after page load).
 goog.array.forEach($$('li', null, $('white-pieces')), function (piece) {
-	goog.events.listen(piece, goog.events.EventType.CLICK, main.pieceSelected, false, main);
+	goog.events.listen(piece, goog.events.EventType.CLICK, main.newInsectSelected, false, main);
 	goog.events.listen(piece, goog.events.EventType.MOUSEOVER, main.hexMouseOver, false, main);
 	goog.events.listen(piece, goog.events.EventType.MOUSEOUT, main.hexMouseOut, false, main);
 });
 goog.array.forEach($$('li', null, $('black-pieces')), function (piece) {
-	goog.events.listen(piece, goog.events.EventType.CLICK, main.pieceSelected, false, main);
+	goog.events.listen(piece, goog.events.EventType.CLICK, main.newInsectSelected, false, main);
 	goog.events.listen(piece, goog.events.EventType.MOUSEOVER, main.hexMouseOver, false, main);
 	goog.events.listen(piece, goog.events.EventType.MOUSEOUT, main.hexMouseOut, false, main);
 });

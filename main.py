@@ -117,36 +117,61 @@ class Game(webapp.RequestHandler):
 		path = os.path.join(os.path.dirname(__file__), 'templates', 'game.html')
 		self.response.out.write(template.render(path, template_values))
 		
-class ShowMoves(webapp.RequestHandler):
-	""" Responds to xhr requests when an insect is selected, to display where it can move. """
+class Placement(webapp.RequestHandler):
+	""" Called for when we want to add a new insect to the board. """
 	def get(self):
+		""" Displays where the insect can be placed. """
 		game_key = self.request.get('gid')
 		game_state = load_game_by_key(game_key)
 
 		insect_name = self.request.get('insect_name')
 		insect_color = self.request.get('insect_color')
+		response = {
+			'success': True,
+			'hexes': [a_hex.id for a_hex in game_state.show_placements(insect_color)]
+		}
+		self.response.out.write(simplejson.dumps(response))
+
+	def post(self):
+		""" Respond to a request to place a new piece. """
+		game_key = self.request.get('gid')
+		game_state = load_game_by_key(game_key)
+
+		insect_name = self.request.get('insect_name')
+		insect_color = self.request.get('insect_color')
+		target_hex = self.request.get('target_hex')
+
+		result = game_state.placement(insect_color, insect_name, target_hex)
+		response = {
+			'success': True,
+			'reveal_hex_ids': [a_hex.id for a_hex in result[0]],
+			'hide_hex_ids': [a_hex.id for a_hex in result[1]]
+		}
+		self.response.out.write(simplejson.dumps(response))
+
+class Move(webapp.RequestHandler):
+	def get(self):
+		""" Responds to xhr requests when an already placed insect is selected, to display where it can move. """
+		game_key = self.request.get('gid')
+		game_state = load_game_by_key(game_key)
 		current_hex = self.request.get('current_hex')
+
 		response = {
 			'success': True,
 			'hexes': [a_hex.id for a_hex in game_state.show_moves(insect_color, insect_name, current_hex)]
 		}
 		self.response.out.write(simplejson.dumps(response))
-		
-class Move(webapp.RequestHandler):
-	""" Respond to xhr when an insect is moved to a specific hex tile. """
+
 	def post(self):
 		""" Submit a move and return what changed on the board, or an error. """
 		# TODO: check for end of game conditions
 		game_key = self.request.get('gid')
 		game_state = load_game_by_key(game_key)
 
-		insect_name = self.request.get('insect_name')
-		insect_color = self.request.get('insect_color')
 		current_hex = self.request.get('current_hex', None)
 		target_hex = self.request.get('target_hex')
 
-		# TODO: let the exceptions reach top level for now
-#		try:
+		# TODO: handle errors
 		result = game_state.move(insect_color, insect_name, current_hex, target_hex)
 		response = {
 			'success': True,
@@ -154,11 +179,6 @@ class Move(webapp.RequestHandler):
 			'hide_hex_ids': [a_hex.id for a_hex in result[1]],
 		}
 		store_game(game_state)
-#		except:
-#			response = {
-#				'success': False,
-#				'msg': 'Something went wrong, :-/'
-#			}
 
 		self.response.out.write(simplejson.dumps(response))
 		
@@ -168,8 +188,10 @@ application = webapp.WSGIApplication([
 									('^/create.*$', Create),
 									('^/table.*$', Table),
 									('^/game.*$', Game),
-									('^/show_moves.*$', ShowMoves),
+									('^/show_moves.*$', Move),
 									('^/move.*$', Move),
+									('^/show_available_placements.*$', Placement),
+									('^/placement.*$', Placement),
 									],
                                     debug=True)
 def main():

@@ -133,11 +133,19 @@ class GameState(object):
 		no_longer_visible = []
 		return newly_visible, no_longer_visible
 		
+	def show_placements(self, color):
+		""" Returns a list of hex ids that the player can play a new insect on """
+		return [a_hex for a_hex in self.board.get_all() if a_hex.is_visible]
+
+	def placement(self, color, insect_name, target_hex_id):
+		""" TODO: logic of actually adding a new insect to the board. """
+		return self.move(color, insect_name, None, target_hex_id)
+
 	def show_moves(self, color, insect, current_hex):
 		""" Returns a list of hex ids that the insect can move to """
 		return [a_hex for a_hex in self.board.get_all() if a_hex.is_visible]
 
-	def check_move(self, color, insect, current_hex_id, target_hex_id):
+	def _check_move(self, color, insect, current_hex_id, target_hex_id):
 		""" Returns True if the insect can move to the target. """
 		return True
 
