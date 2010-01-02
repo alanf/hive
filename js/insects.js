@@ -86,6 +86,7 @@ Main.prototype.moveResponse = function (event) {
 	// Administrative work to update the board after moving an insect
 	// TODO: check success
 	var response = event.target.getResponseJson();
+	goog.dom.classes.remove($(this.targetHexID), 'hidden');
 	goog.array.forEach(response.reveal_hex_ids, function (hexID) {
 		goog.dom.classes.remove($(hexID), 'hidden');
 	});

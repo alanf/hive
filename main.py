@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 import cgi
+from collections import defaultdict
 import os
 import pickle
 from django.utils import simplejson
 
 from logic import GameState
+from logic import Hex
 import dbobjs
 
 from google.appengine.api import users
@@ -104,15 +106,46 @@ def store_game(game_state):
 	game.put()
 	return game.key()
 
+def grid(board, min_size=7):
+	""" Used to display the game board as a grid, so we can easily render it in the template. """
+	grid = defaultdict(lambda : [])
+	min_row = min_col = 0
+	max_row = max_col = min_size
+	# Put the hex in the right row. We'll sort by col at the end.
+	for a_hex in board.hexes:
+		coord = board._id_to_coord(a_hex.id)
+
+		min_row = min(coord[0], min_row)
+		max_row = max(coord[0], max_row)
+		min_col = min(coord[1], min_col)
+		max_col = max(coord[1], max_col)
+		grid[coord[0]].append(a_hex)
+	
+	# Pad the grid with "missing" hexes
+	for row in range(min_row, max_row):
+		for col in range(min_col, max_col):
+			temp_hex = Hex((row, col))
+			if not board.get_by_id(temp_hex.id):
+				grid[row].append(temp_hex)
+
+	# Now make sure it's all in order
+	for row in grid.values():
+		# Sort inside each row by the x value of its coord, i.e. by column
+		row.sort(lambda a, b: cmp(board._id_to_coord(a.id)[1], board._id_to_coord(b.id)[1]))
+	
+	return [grid[row] for row in range(min_row, max_row)]
+		
 class Game(webapp.RequestHandler):
 	""" This is the main view, it sets up all the state to render the game. """
 	def get(self):
 		game_key = self.request.get('gid')
 		# TODO: validation, throw error if necessary
 		game_state = load_game_by_key(game_key)
+		game_grid = grid(game_state.board)
 
 		template_values = {
-			'game_state': game_state
+			'game_state': game_state,
+			'game_grid': game_grid,
 		}
 		path = os.path.join(os.path.dirname(__file__), 'templates', 'game.html')
 		self.response.out.write(template.render(path, template_values))
@@ -128,7 +161,7 @@ class Placement(webapp.RequestHandler):
 		insect_color = self.request.get('insect_color')
 		response = {
 			'success': True,
-			'hexes': [a_hex.id for a_hex in game_state.show_placements(insect_color)]
+			'hexes': game_state.show_placements(insect_color)
 		}
 		self.response.out.write(simplejson.dumps(response))
 
@@ -144,8 +177,8 @@ class Placement(webapp.RequestHandler):
 		result = game_state.placement(insect_color, insect_name, target_hex)
 		response = {
 			'success': True,
-			'reveal_hex_ids': [a_hex.id for a_hex in result['newly_visible']],
-			'hide_hex_ids': [a_hex.id for a_hex in result['no_longer_visible']]
+			'reveal_hex_ids': result['newly_visible'],
+			'hide_hex_ids': result['no_longer_visible']
 		}
 		store_game(game_state)
 		self.response.out.write(simplejson.dumps(response))
@@ -159,7 +192,7 @@ class Move(webapp.RequestHandler):
 
 		response = {
 			'success': True,
-			'hexes': [a_hex.id for a_hex in game_state.show_moves(current_hex)]
+			'hexes': [a_hex for a_hex in game_state.show_moves(current_hex)]
 		}
 		self.response.out.write(simplejson.dumps(response))
 
@@ -178,8 +211,8 @@ class Move(webapp.RequestHandler):
 			'success': True,
 			'insect_name': result['insect'].name,
 			'insect_color': result['insect'].color,
-			'reveal_hex_ids': [a_hex.id for a_hex in result['newly_visible']],
-			'hide_hex_ids': [a_hex.id for a_hex in result['no_longer_visible']],
+			'reveal_hex_ids':  result['newly_visible'],
+			'hide_hex_ids': result['no_longer_visible'],
 		}
 		store_game(game_state)
 
