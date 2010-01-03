@@ -19,10 +19,15 @@ ol {
 #board-container {
 	border: solid black 5px;
 	width: 510px;
-	height: 620px;
+	height: 650px;
 	position: absolute;
 	top: 5px;
 	left: 130px;
+	overflow: auto;
+}
+
+.row {
+	width: 500px;
 }
 
 .hex {

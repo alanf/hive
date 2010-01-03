@@ -82,6 +82,12 @@ Main.prototype.hexClicked = function (event) {
 	}	
 };
 
+Main.prototype.clearAvailableMoves = function() {
+	goog.array.forEach($$('span', 'available-moves'), function (hex) {
+		goog.dom.classes.remove(hex, 'available-move');
+	});
+};
+
 Main.prototype.moveResponse = function (event) {
 	// Administrative work to update the board after moving an insect
 	// TODO: check success
@@ -101,15 +107,14 @@ Main.prototype.moveResponse = function (event) {
 
 Main.prototype.updateBoard = function (insectName, insectColor, currentHexID, targetHexID) {
 	// Render the changes after an insect move.
-	var targetHex = $(targetHexID);
-	goog.dom.classes.remove(targetHex, 'available-move');
-	this.updateHexIcon(targetHex, insectName, insectColor);
-
+	this.clearAvailableMoves();
 	if (currentHexID) {
 		var currentHex = $(currentHexID);
 		this.resetHexIcon(currentHex);
 		this.currentHexID = null;
 	}
+	this.clearAvailableMoves();
+	this.updateHexIcon(targetHexID, insectName, insectColor);
 };
 
 Main.prototype.resetHexIcon = function (hex) {

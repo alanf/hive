@@ -28,20 +28,18 @@ class Ant(Insect):
 
 class Hex(object):
 	""" Represents a single tile which may contain multiple insects. """
-	def __init__(self, coord, is_visible=False, insect=None):
+	def __init__(self, coord, insect=None):
 		self.coord = coord
 		self.id = '%s-%s' % self.coord
 		self.insects = []
 		if insect is not None:
 			self.insects.append(insect)
-		# TODO: better name, this var is for displaying peripheral hexes
-		self.is_visible = is_visible
 
 class HiveBoard(object):
 	""" A grid of hex tiles. Since insects can be placed forever in any direction,
 		this will have to grow in a strange way, this is a TODO. """
 	def __init__(self, start_coord):
-		self.hexes = [Hex((start_coord[0], start_coord[1]), is_visible=True)]
+		self.hexes = [Hex((start_coord[0], start_coord[1]))]
 	
 	def add_by_id(self, hex_id, insect=None):
 		if self.get_by_id(hex_id):
@@ -81,9 +79,14 @@ class HiveBoard(object):
 		return result
 
 	def neighbor_ids(self, hex_id):
+		" Return the ids of all the hexes adjacent to the hex_id. """
 		coord = self._id_to_coord(hex_id)
-		offsets =  [(-1, -1), (0, -1), (-1, 1),
-					(-1, 0), (0, 1), (1, 0)]
+		if coord[1] % 2 == 0:
+			offsets =  [(0, -1), (-1, 0), (0, 1),
+						(1, -1), (1, 0), (1, 1)]
+		else:
+			offsets =  [(-1, -1), (-1, 0), (-1, 1),
+						(0, -1), (1, 0), (0, 1)]
 		# Build a list of all the hex ids offset from the target
 		return ['%s-%s' % (coord[0] + x, coord[1] + y) for x, y in offsets]
 		
@@ -116,10 +119,15 @@ class GameState(object):
 
 	def show_placements(self, color):
 		""" Returns a list of hex ids that the player can play a new insect on """
-		potential_placements = []
-		for hex_id in self.board.all_ids():
-			potential_placements.extend(self.board.vacant_neighbor_ids(hex_id))
-		return [hex_id for hex_id in (set(potential_placements)) if self.board.is_visible(hex_id)]
+		if self.current_turn == 0:
+			return [self.board.hexes[0].id]
+		else:
+			potential_placements = []
+			for insect in (self.white_pieces + self.black_pieces):
+				if insect.hex_id is not None:
+					potential_placements.extend(self.board.vacant_neighbor_ids(insect.hex_id))
+			return [hex_id for hex_id in (set(potential_placements))]
+
 
 	def placement(self, color, insect_name, target_hex_id):
 		""" TODO: this logic is duplicated, but it's a placeholder currently. """
@@ -151,8 +159,8 @@ class GameState(object):
 
 	def move(self, current_hex_id, target_hex_id):
 		""" Move a piece somewhere, throw an exception if it's not allowed. """
+		current_hex = self.board.get_by_id(current_hex_id)
 		target_hex = self.board.get_by_id(target_hex_id) or self.board.add_by_id(target_hex_id)
-		current_hex = self.board.get_by_id(current_hex_id) or self.board.add_by_id(target_hex_id)
 		insect = current_hex.insects[0]
 
 		# Move the insect from its old spot
