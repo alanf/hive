@@ -36,8 +36,7 @@ class Hex(object):
 			self.insects.append(insect)
 
 class HiveBoard(object):
-	""" A grid of hex tiles. Since insects can be placed forever in any direction,
-		this will have to grow in a strange way, this is a TODO. """
+	""" A collection of hex tiles, with methods to enable graph manipulations. """
 	def __init__(self, start_coord):
 		self.hexes = [Hex((start_coord[0], start_coord[1]))]
 	
@@ -52,13 +51,6 @@ class HiveBoard(object):
 	def all_ids(self):
 		return [a_hex.id for a_hex in self.hexes]
 
-	def is_visible(self, hex_id):
-		a_hex = self.get_by_id(hex_id)
-		return len(self.vacant_neighbor_ids(hex_id)) < 6 or a_hex and a_hex.insects
-
-	def all_visible_ids(self):
-		return [hex_id for hex_id in self.all_ids() if self.is_visible(hex_id)]
-
 	def get_by_id(self, hex_id):
 		for a_hex in self.hexes:
 			if a_hex.id == hex_id:
@@ -66,9 +58,6 @@ class HiveBoard(object):
 		else:
 			return None
 	
-	def get_insects_by_id(self, hex_id):
-		return self.get_by_id(hex_id).insects
-
 	def vacant_neighbor_ids(self, hex_id):
 		result =[]
 		for neighbor_id in self.neighbor_ids(hex_id):
@@ -81,6 +70,7 @@ class HiveBoard(object):
 	def neighbor_ids(self, hex_id):
 		" Return the ids of all the hexes adjacent to the hex_id. """
 		coord = self._id_to_coord(hex_id)
+		# This is a bit goofy: depending on which column we're in, the coordinates of our neighbors vary
 		if coord[1] % 2 == 0:
 			offsets =  [(0, -1), (-1, 0), (0, 1),
 						(1, -1), (1, 0), (1, 1)]
@@ -142,16 +132,11 @@ class GameState(object):
 		self.current_turn += 1
 
 		# TODO: need actual logic here, this is placeholder
-		newly_visible = self.board.vacant_neighbor_ids(target_hex_id)
-		no_longer_visible = []
-		return {
-			'newly_visible': newly_visible,
-			'no_longer_visible': no_longer_visible,
-		}
+		return self.board.vacant_neighbor_ids(target_hex_id)
 
 	def show_moves(self, current_hex):
 		""" Returns a list of hex ids that the insect on the current_hex can move to """
-		return self.board.all_visible_ids() + self.board.vacant_neighbor_ids(current_hex)
+		return self.show_placements(color=None)
 
 	def _check_move(self, color, insect, current_hex_id, target_hex_id):
 		""" Returns True if the insect can move to the target. """
@@ -172,13 +157,7 @@ class GameState(object):
 
 		self.current_turn += 1
 
-		newly_visible = self.board.vacant_neighbor_ids(target_hex_id)
-		no_longer_visible = list(set(self.board.all_ids()) - set(self.board.all_visible_ids()))
-		return {
-			'newly_visible': newly_visible,
-			'no_longer_visible': no_longer_visible,
-			'insect': insect
-		}
+		return insect
 		
 	def winner(self):
 		""" Returns None if the game is not over or the color of the winning player. """

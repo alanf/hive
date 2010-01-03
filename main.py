@@ -177,8 +177,7 @@ class Placement(webapp.RequestHandler):
 		result = game_state.placement(insect_color, insect_name, target_hex)
 		response = {
 			'success': True,
-			'reveal_hex_ids': result['newly_visible'],
-			'hide_hex_ids': result['no_longer_visible']
+			'reveal_hex_ids': result,
 		}
 		store_game(game_state)
 		self.response.out.write(simplejson.dumps(response))
@@ -206,13 +205,11 @@ class Move(webapp.RequestHandler):
 		target_hex = self.request.get('target_hex')
 
 		# TODO: handle errors
-		result = game_state.move(current_hex, target_hex)
+		insect = game_state.move(current_hex, target_hex)
 		response = {
 			'success': True,
-			'insect_name': result['insect'].name,
-			'insect_color': result['insect'].color,
-			'reveal_hex_ids':  result['newly_visible'],
-			'hide_hex_ids': result['no_longer_visible'],
+			'insect_name': insect.name,
+			'insect_color': insect.color,
 		}
 		store_game(game_state)
 
